@@ -4,7 +4,7 @@ import socket
 import threading
 import time
 import traceback
-import PeerConnection
+from PeerConnection import *
 
 def btdebug( msg ):
     """ Prints a messsage to the screen with the name of the current thread """
@@ -40,7 +40,7 @@ Main function for a peer in a P2P network
 		self.debug = debug 
 		self.peers = {}  # list (dictionary/hash table) of known peers
 		self.shutdown = False  # used to stop the main loop
-		self.handlers = {} # [msgtype]( peerconn, msgdata)  how does this work???
+		self.handlers = {} # msgtype: function ( peerconn, msgdata)  
 		self.router = None  #Routing function to decide the peer to send msg
 
    	#-------------------------------------------------------------------------
@@ -231,8 +231,7 @@ Main function for a peer in a P2P network
 		""" 
 		Adds a peer name and host:port mapping to the known list of peers.
 		"""
-		if peerid not in self.peers and (self.maxpeers == 0 or
-						 len(self.peers) < self.maxpeers):
+		if peerid not in self.peers and (self.maxpeers == 0 or len(self.peers) < self.maxpeers):
 		    self.peers[ peerid ] = (host, int(port))
 		    return True
 		else:

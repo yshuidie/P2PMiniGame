@@ -37,7 +37,7 @@ class PeerConnection:
 		try:
 		    msg = self.__makemsg( msgtype, msgdata )
 		    self.buffer.write( msg )
-		    self.buffer.flush()
+		    self.buffer.flush()  #send
 		except KeyboardInterrupt:
 		    raise
 		except:
