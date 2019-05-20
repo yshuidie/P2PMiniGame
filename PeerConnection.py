@@ -6,28 +6,28 @@ import traceback
 
 
 class PeerConnection:
-    def __init__( self, peerid, host, port, sock=None, debug=False ):
+	def __init__( self, peerid, host, port, sock=None, debug=False ):
 	# any exceptions thrown upwards
 		self.id = peerid
 		self.debug = debug
 
 		if not sock:  #If client socket hasn't been created
-		    self.socket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
-		    self.socket.connect( ( host, int(port) ) )
+			self.socket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+			self.socket.connect( ( host, int(port) ) )
 		else:
-		    self.socket = sock
+			self.socket = sock
 
 		#create a local file that saves message to sent temporarily
 		self.buffer = self.socket.makefile( 'rw', 0 )  
 
 
-    def __makemsg( self, msgtype, msgdata ):
+	def __makemsg( self, msgtype, msgdata ):
 		msglen = len(msgdata)
 		msg = struct.pack( "!4sL%ds" % msglen, msgtype, msglen, msgdata )
 		return msg
 
 
-    def senddata( self, msgtype, msgdata ):
+	def senddata( self, msgtype, msgdata ):
 		"""
 		senddata( message type, message data ) -> boolean status
 
@@ -35,18 +35,18 @@ class PeerConnection:
 		or False if there was an error.
 		"""
 		try:
-		    msg = self.__makemsg( msgtype, msgdata )
-		    self.buffer.write( msg )
-		    self.buffer.flush()  #send
+			msg = self.__makemsg( msgtype, msgdata )
+			self.buffer.write( msg )
+			self.buffer.flush()  #send
 		except KeyboardInterrupt:
-		    raise
+			raise
 		except:
-		    if self.debug:
-			traceback.print_exc()
-		    return False
+			if self.debug:
+				traceback.print_exc()
+			return False
 		return True
-	    
-    def recvdata( self ):
+		
+	def recvdata( self ):
 		"""
 		recvdata() -> (msgtype, msgdata)
 
@@ -54,32 +54,33 @@ class PeerConnection:
 		if there was any error.
 		"""
 		try:
-		    msgtype = self.buffer.read( 4 )
-		    if not msgtype: return (None, None)
-		    
-	        lenstr = self.buffer.read( 4 )
-		    msglen = int(struct.unpack( "!L", lenstr )[0])  
-		    msg = ""
+			msgtype = self.buffer.read( 4 )
+			if not msgtype:
+				return (None, None)
+			
+			lenstr = self.buffer.read(4)
+			msglen = int(struct.unpack( "!L", lenstr )[0])  
+			msg = ""
 
-		    #read until there's message
-		    while len(msg) != msglen:  
+			#read until there's message
+			while len(msg) != msglen:  
 				data = self.buffer.read( min(2048, msglen - len(msg)) )
 				if not len(data):
-				    break
+					break
 				msg += data
 
-		    if len(msg) != msglen:
+			if len(msg) != msglen:
 				return (None, None)
 
 		except KeyboardInterrupt:
-		    raise
+			raise
 		except:
-		    if self.debug:
+			if self.debug:
 				traceback.print_exc()
-		    return (None, None)
+			return (None, None)
 		return ( msgtype, msg )
 
-    def close( self ):
+	def close( self ):
 		"""
 		Close the peer connection. The send and recv methods will not work
 		after this call.
@@ -89,9 +90,9 @@ class PeerConnection:
 		self.buffer = None
 
 
-    def __str__( self ):
+	def __str__( self ):
 		return "|%s|" % peerid
 
-    def __debug( self, msg ):
+	def __debug( self, msg ):
 		if self.debug:
-		    btdebug( msg )
+			btdebug( msg )
