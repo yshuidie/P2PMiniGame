@@ -108,6 +108,7 @@ class Peer:
 				t = threading.Thread( target = self.__handlepeer, 
 							  args = [ clientsock ] )
 				t.start()
+				time.sleep(1000)
 			except KeyboardInterrupt:  #ctrl+C
 				print 'KeyboardInterrupt: stopping mainloop'
 				self.shutdown = True
