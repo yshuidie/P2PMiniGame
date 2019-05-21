@@ -35,9 +35,9 @@ def main():
 	t = threading.Thread( target = me.mainloop, args = [] )
 	t.start()
 	  
-	me.startstabilizer( self.btpeer.checklivepeers, 3 )
+	#me.startstabilizer( self.btpeer.checklivepeers, 3 )
 #	self.btpeer.startstabilizer( self.onRefresh, 3 )
-	after( 3000, self.onTimer )
+	#after( 3000, self.onTimer )
 
 	
 
