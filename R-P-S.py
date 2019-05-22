@@ -32,8 +32,13 @@ def main():
 	#	retry = raw_input('No other peers. Try connect again? (y/n)')
 	#	me.buildpeers(host, int(port), hops=2)
 
-	t = threading.Thread( target = me.mainloop, args = [] )
-	t.start()
+	me.mainloop()
+	#t = threading.Thread( target = me.mainloop, args = [] )
+	#t.daemon=True
+	#t.start()
+	#while True:
+	#	time.sleep(100)
+
 	  
 	#me.startstabilizer( self.btpeer.checklivepeers, 3 )
 #	self.btpeer.startstabilizer( self.onRefresh, 3 )

@@ -101,14 +101,17 @@ class Peer:
 		while not self.shutdown: #listening when on
 			try:
 				self.__debug( 'Listening for connections...' )
+				time.sleep(5)
 				clientsock, clientaddr = s.accept()
-				clientsock.settimeout(None)
+
+				#clientsock.settimeout(None)
 
 				#handle the communication in a new thread
-				t = threading.Thread( target = self.__handlepeer, 
-							  args = [ clientsock ] )
-				t.start()
-				time.sleep(1000)
+				#t = threading.Thread( target = self.__handlepeer, 
+				#			  args = [ clientsock ] )
+				
+				#t.start()
+				
 			except KeyboardInterrupt:  #ctrl+C
 				print 'KeyboardInterrupt: stopping mainloop'
 				self.shutdown = True
