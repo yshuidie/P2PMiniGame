@@ -1,3 +1,4 @@
+import enum
 from Peer import *
 
 
@@ -8,14 +9,22 @@ PEERNAME = "NAME"   # request a peer's canonical id
 LISTPEERS = "LIST"
 INSERTPEER = "JOIN"
 PEERQUIT = "QUIT"
-
 REPLY = "REPL"
 ERROR = "ERRO"
 
+STATUS = "STAT"  #request a peer's status
+DIALOG = "DIAL"  #send a sentence
+
+#-----------------------------
+#  Define player status
+#-----------------------------
+class Status(enum.Enum):
+	idle = 0
+	pairing = 1
+	playing = 2
+
 # Assumption in this program:
 #   peer id's in this application are just "host:port" strings
-
-
 class PlayerPeer(Peer):
 	"""
 	A minigame player entity based on Peer class.
@@ -27,13 +36,19 @@ class PlayerPeer(Peer):
 
 		self.addrouter(self.__router) 
 
-		handlers = {LISTPEERS : self.__handle_listpeers,
+		handlers = {LISTPEERS: self.__handle_listpeers,
 					INSERTPEER : self.__handle_insertpeer,
 					PEERNAME: self.__handle_peername,
-					PEERQUIT: self.__handle_quit
+					PEERQUIT: self.__handle_quit,
+					STATUS: self.__handle_status,
+					DIALOG: self.__handle_dialog,
 				   }
 		for mt in handlers:
 			self.addhandler(mt, handlers[mt])
+
+		self.status = Status.idle
+		self.peerid = None #the pairing player
+		self.dialog = None #dialog recieved by peer
 
 
 	def __router(self, peerid):
@@ -98,6 +113,48 @@ class PlayerPeer(Peer):
 			self.removepeer(peerid)
 
 
+	def pairing(self):
+		"""
+		Find a peer who is pairing for game
+		"""
+		cont = 'y'
+		while cont == 'y' and self.status == Status.pairing: 
+			todelete = []
+			for pid in self.peers:
+				try:
+					self.__debug( 'Requesting status of %s' % pid )
+					host,port = self.peers[pid]
+					resp = self.sendtopeer(pid, STATUS, self.myid)  #!#ask peer for status
+					pstatus = resp.pop()[1]
+					if pstatus == str(Status.pairing):
+						print 'Found player: %s' % pid
+						self.status = Status.playing
+						self.peerid = pid
+						return
+				except:
+					if self.debug:
+						traceback.print_exc()
+			
+			cont = None
+			while self.status == Status.pairing and cont != 'y' and cont != 'n':
+				cont = raw_input('Can\'t find another peer pairing. Try again? (y/n)')
+
+				if cont == 'n':
+					self.shutdown = True
+					self.status == Status.idle
+
+		
+	def send_dialog(self,msg):
+		self.__debug("Sending message [%s] to %s" % (msg,self.peerid))
+		try:
+			resp = self.sendtopeer(self.peerid, DIALOG, msg)[0]
+			self.__debug(str(resp))
+			return True
+		except:
+			print "Failed to send message to peer. Trying again..."
+			return False
+
+
 	#-----------------------
 	# Specific message handlers
 	#-----------------------------
@@ -152,6 +209,38 @@ class PlayerPeer(Peer):
 			self.peerlock.release()
 
 
+	def __handle_status(self, peerconn, data):
+		""" 
+		Handles the STAT message type. Message data is the id of the sender. 
+		If Node is pairing, change its status to playing
+		"""
+		self.peerlock.acquire()
+		try:
+			msg = 'Sending back status: %s' % self.status
+			self.__debug(msg)
+			peerconn.senddata(REPLY, str(self.status))
+			if self.status == Status.pairing:
+				self.peerid = data.lstrip().rstrip()
+				print '\nFound player: %s' % self.peerid
+				self.status = Status.playing
+		except:
+			self.__debug('Failed to send status')
+		finally:
+			self.peerlock.release()
+
+	def __handle_dialog(self, peerconn, data):
+		""" 
+		Handles the DIAL message type. Message data is the opponent's words. 
+		"""
+		self.peerlock.acquire()
+		try:
+			self.dialog = data.lstrip().rstrip()
+			self.__debug('Dialog added: [%s]' % self.dialog)
+			peerconn.senddata(REPLY, 'DIAL: Dialog recieved')
+		except:
+			self.__debug('Failed to send reply')
+		finally:
+			self.peerlock.release()
 
 	def __handle_quit(self, peerconn, data):
 		""" 
@@ -174,6 +263,8 @@ class PlayerPeer(Peer):
 				peerconn.senddata(ERROR, msg)
 		finally:
 			self.peerlock.release()
+
+
 
 	def __debug( self, msg ):
 		if self.debug:

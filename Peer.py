@@ -49,7 +49,7 @@ class Peer:
 	def makeserversocket( self, port, backlog=5 ):
 		"""
 		Create socket and bind to port
-		Called in mainloop
+		Called in main_loop
 		"""
 		#creates a socket that will communicate using the IPv4 (AF_INET) protocol with TCP (SOCK_STREAM)
 		s = socket.socket( socket.AF_INET, socket.SOCK_STREAM ) 
@@ -62,7 +62,7 @@ class Peer:
 	def __handlepeer( self, clientsock ):
 		"""
 		Handle new peer connection recieved from clientsock
-		Called in mainloop
+		Called in main_loop
 		"""
 		self.__debug( 'New child ' + str(threading.currentThread().getName()) )
 		self.__debug( 'Connected ' + str(clientsock.getpeername()) )
@@ -89,7 +89,7 @@ class Peer:
 		peerconn.close()
 
 
-	def mainloop(self):
+	def main_loop(self):
 		"""
 		Accept connections continously
 		"""
@@ -101,19 +101,18 @@ class Peer:
 		while not self.shutdown: #listening when on
 			try:
 				self.__debug( 'Listening for connections...' )
-				time.sleep(5)
 				clientsock, clientaddr = s.accept()
 
-				#clientsock.settimeout(None)
+				clientsock.settimeout(None)
 
 				#handle the communication in a new thread
-				#t = threading.Thread( target = self.__handlepeer, 
-				#			  args = [ clientsock ] )
+				t = threading.Thread( target = self.__handlepeer, 
+							  args = [ clientsock ] )
 				
-				#t.start()
+				t.start()
 				
 			except KeyboardInterrupt:  #ctrl+C
-				print 'KeyboardInterrupt: stopping mainloop'
+				print 'KeyboardInterrupt: stopping main_loop'
 				self.shutdown = True
 				continue
 			except:
@@ -147,8 +146,10 @@ class Peer:
 			peerconn.senddata( msgtype, msgdata )
 			self.__debug( 'Sent %s: %s' % (pid, msgtype) )
 			
+			self.__debug(waitreply)
 			if waitreply:
 				onereply = peerconn.recvdata()
+				self.__debug(onereply)
 				while (onereply != (None,None)):  #(msgtype,msgdata)
 					msgreply.append( onereply )
 					self.__debug( 'Got reply %s: %s' % ( pid, str(msgreply) ) )
@@ -305,6 +306,7 @@ class Peer:
 		"""
 		t = threading.Thread( target = self.__runstabilizer, 
 					  args = [ stabilizer, delay ] )
+		t.daemon=True
 		t.start()
 
 
