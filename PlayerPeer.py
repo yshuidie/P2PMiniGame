@@ -53,7 +53,8 @@ class PlayerPeer(Peer):
 		self.peerid = None #the pairing player
 		self.opponentDialog = None #dialog from self.peerid (opponent)
 		self.opponentHand = None #hand of self.peerid (opponent)
-
+		self.win = 0  #number of rounds the player win in a game
+		self.lose = 0 #number of rounds the player lose in a game
 
 	def __router(self, peerid):
 		"""
@@ -242,7 +243,7 @@ class PlayerPeer(Peer):
 			peerconn.senddata(REPLY, str(self.status))
 			if self.status == Status.pairing:
 				self.peerid = data.lstrip().rstrip()
-				print '\nFound player: %s. Press any button to continue.' % self.peerid
+				print '\nFound player: %s. Press enter to continue.' % self.peerid
 				self.status = Status.playing
 		except:
 			self.__debug('Failed to send status')
