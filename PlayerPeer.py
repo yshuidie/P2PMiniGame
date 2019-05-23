@@ -14,6 +14,7 @@ ERROR = "ERRO"
 
 STATUS = "STAT"  #request a peer's status
 DIALOG = "DIAL"  #send a sentence
+HAND = "HAND" #send 
 
 #-----------------------------
 #  Define player status
@@ -22,6 +23,7 @@ class Status(enum.Enum):
 	idle = 0
 	pairing = 1
 	playing = 2
+
 
 # Assumption in this program:
 #   peer id's in this application are just "host:port" strings
@@ -42,13 +44,15 @@ class PlayerPeer(Peer):
 					PEERQUIT: self.__handle_quit,
 					STATUS: self.__handle_status,
 					DIALOG: self.__handle_dialog,
+					HAND: self.__handle_hand,
 				   }
 		for mt in handlers:
 			self.addhandler(mt, handlers[mt])
 
 		self.status = Status.idle
 		self.peerid = None #the pairing player
-		self.dialog = None #dialog recieved by peer
+		self.opponentDialog = None #dialog from self.peerid (opponent)
+		self.opponentHand = None #hand of self.peerid (opponent)
 
 
 	def __router(self, peerid):
@@ -145,15 +149,32 @@ class PlayerPeer(Peer):
 
 		
 	def send_dialog(self,msg):
+		"""
+		Send msg to self.peerid. 
+		msg: some string.
+		Todo: repeat if fails
+			string length limit?
+		"""
 		self.__debug("Sending message [%s] to %s" % (msg,self.peerid))
 		try:
 			resp = self.sendtopeer(self.peerid, DIALOG, msg)[0]
 			self.__debug(str(resp))
-			return True
 		except:
 			print "Failed to send message to peer. Trying again..."
-			return False
 
+
+	def send_hand(self,hand):
+		"""
+		Send hand to self.peerid
+		hand: '0','1', or '2'
+		Todo: repeat if fails
+		"""
+		self.__debug("Sending hand [%s] to %s" % (hand, self.peerid))
+		try:
+			resp = self.sendtopeer(self.peerid, HAND, hand)[0]
+			self.__debug(str(resp))
+		except:
+			print "Failed to send hand to peer. Trying again..."
 
 	#-----------------------
 	# Specific message handlers
@@ -221,7 +242,7 @@ class PlayerPeer(Peer):
 			peerconn.senddata(REPLY, str(self.status))
 			if self.status == Status.pairing:
 				self.peerid = data.lstrip().rstrip()
-				print '\nFound player: %s' % self.peerid
+				print '\nFound player: %s. Press any button to continue.' % self.peerid
 				self.status = Status.playing
 		except:
 			self.__debug('Failed to send status')
@@ -234,9 +255,23 @@ class PlayerPeer(Peer):
 		"""
 		self.peerlock.acquire()
 		try:
-			self.dialog = data.lstrip().rstrip()
-			self.__debug('Dialog added: [%s]' % self.dialog)
+			self.opponentDialog = data.lstrip().rstrip()
+			self.__debug('Opponent dialog added: [%s]' % self.opponentDialog)
 			peerconn.senddata(REPLY, 'DIAL: Dialog recieved')
+		except:
+			self.__debug('Failed to send reply')
+		finally:
+			self.peerlock.release()
+
+	def __handle_hand(self, peerconn, data):
+		""" 
+		Handles the HAND message type. Message data is the opponent's hand. 
+		"""
+		self.peerlock.acquire()
+		try:
+			self.opponentHand = data.lstrip().rstrip()
+			self.__debug('Opponent hand added: [%s]' % self.opponentHand)
+			peerconn.senddata(REPLY, 'HAND: Hand recieved')
 		except:
 			self.__debug('Failed to send reply')
 		finally:

@@ -2,7 +2,8 @@
 
 from PlayerPeer import *
 from Tkinter import *
-games = {1:'Rock–paper–scissors'}
+games = {'1':'Rock–paper–scissors'}
+RPS_hands = {'0':'Rock','1':'Paper','2':'Scissors'}
 
 
 class GameClient():
@@ -31,10 +32,10 @@ class GameClient():
 		for key,value in games.iteritems():
 			print key,':', value
     
-		self.gamechoice = int(raw_input('Please choose the game you want to play (or 0 to quit):'))
-		while self.gamechoice not in games.keys() and self.gamechoice != 0:
-			self.gamechoice = int(raw_input('Invalid Input. Please choose the game you want to play:'))
-		if self.gamechoice == 0:
+		self.gamechoice = raw_input('Please choose the game you want to play (or 0 to quit):')
+		while self.gamechoice not in games.keys() and self.gamechoice != '0':
+			self.gamechoice = raw_input('Invalid Input. Please choose the game you want to play:')
+		if self.gamechoice == '0':
 			print 'Bye!'
 			self.me.shutdown = True
 			sys.exit(0)
@@ -46,20 +47,36 @@ class GameClient():
 		print "Round", roundn
 		msg = raw_input('Say something to your opponent (Ex: I am going Scissor):')
 
-		#sent = False
-		#while not sent:
-		sent = self.me.send_dialog(msg)
+		#Players send words to each other
+		self.me.send_dialog(msg)
 
 		#To do: improve the prompt once succeed
-		while not self.me.dialog:
+		while not self.me.opponentDialog:
 			print "Waiting for opponent's words..."
 			time.sleep(2)
 
-		if self.me.dialog:
-			print "Opponent says:", self.me.dialog
+		if self.me.opponentDialog:
+			print "Opponent says:", self.me.opponentDialog
+			self.me.opponentDialog = None #clear dialog for next use
 
-		#hand = int(raw_input("Now show your hand! 0 = Rock, 1 = Paper, 2 = Scissor"))
-		#self.me.shutdown = True
+		#Show hand to each other
+		myhand = raw_input("Now show your hand (0 = Rock, 1 = Paper, 2 = Scissor): ")
+		while myhand not in ['0','1','2']:
+			myhand = raw_input("Invalid input, please try again (0 = Rock, 1 = Paper, 2 = Scissor):")
+
+		self.me.send_hand(myhand)
+
+		#To do: improve the prompt once succeed
+		while not self.me.opponentHand:
+			print "Waiting for opponent's hand..."
+			time.sleep(2)
+
+		if self.me.opponentHand:
+			print "Opponent show hand: %s!" % RPS_hands[self.me.opponentHand]
+			self.me.opponentHand = None #clear dialog for next use
+
+
+
 
 
 	def main_loop(self):
