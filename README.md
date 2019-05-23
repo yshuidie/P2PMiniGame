@@ -15,12 +15,16 @@ Run Method
 In terminal with a Python 2 environment, type:
 
 python R-P-S.py [your port] maxpeer [first peer IP]:[first peer port] 0
+
 -The last parameter 0 stands for turning debug mode off.
+
 -maxpeer = 0 stands for infinite peers.
+
 
 
 Example: 
 Open two local terminals and run the following command in each terminal:
 
 python R-P-S.py 8889 0 localhost:8890 0
+
 python R-P-S.py 8890 0 localhost:8889 0
